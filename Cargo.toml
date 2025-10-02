@@ -1,7 +1,13 @@
 [package]
+authors = ["Tushar Adhatrao <tusharadhatrao@gmail.com>"]
 name = "files-to-prompt"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+homepage = "https://github.com/tusharad/files-to-prompt"
+description = "Concatenate a directory full of files into a single prompt for use with LLMs"
+readme = "README.md"
+repository = "https://github.com/tusharad/files-to-prompt" 
 
 [dependencies]
 clap = { version = "4.5.48", features = ["derive"] }
