@@ -26,6 +26,9 @@ pub struct AppConfig {
 
     #[arg(short, long, default_value_t = false)]
     pub line_numbers: bool,
+
+    #[arg(short, long, default_value_t = 300000)]
+    pub depth: i32,
 }
 
 pub fn get_config() -> AppConfig {

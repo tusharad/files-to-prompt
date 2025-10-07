@@ -13,7 +13,7 @@ pub fn process(app_config: AppConfig) -> Result<(), String> {
     let cont = Arc::new(Mutex::new(String::new()));
     let cont1 = Arc::clone(&cont);
 
-    let _ = process_paths(paths, app_config.clone(), visited, cont);
+    let _ = process_paths(paths, app_config.clone(), visited, cont, 0);
 
     let output_filename = mk_extension(&app_config);
     let content = cont1.lock().unwrap();
@@ -26,6 +26,7 @@ fn process_paths(
     _app_config: AppConfig,
     _visited: Arc<Mutex<HashSet<(u64, u64)>>>,
     _cont: Arc<Mutex<String>>,
+    max_depth: i32,
 ) -> Result<(), String> {
     let mut handles = vec![];
 
@@ -34,7 +35,8 @@ fn process_paths(
         let visited = Arc::clone(&_visited);
         let app_config = _app_config.clone();
 
-        let handle = thread::spawn(move || process_path(&_path, &app_config, visited, cont));
+        let handle =
+            thread::spawn(move || process_path(&_path, &app_config, visited, cont, max_depth));
         handles.push(handle);
     }
     for handle in handles {
@@ -48,6 +50,7 @@ fn process_path(
     app_config: &AppConfig,
     _visited: Arc<Mutex<HashSet<(u64, u64)>>>,
     cont: Arc<Mutex<String>>,
+    max_depth: i32,
 ) {
     match path.try_exists() {
         Ok(true) => {
@@ -80,10 +83,13 @@ fn process_path(
                     let dev = metadata.dev();
                     let key = (inode, dev);
                     let mut visited = _visited.lock().unwrap();
-                    if !visited.insert(key) {
+                    if !visited.insert(key) || max_depth > app_config.depth {
                         // directory already visited, skipping
                         return;
                     }
+                } else {
+                    //failed to get path metadata, returning just in case
+                    return;
                 }
 
                 let entries = path.read_dir().expect("Cannot read dir");
@@ -94,7 +100,7 @@ fn process_path(
                         Err(_) => println!("Cannot read dir"),
                     }
                 }
-                let _ = process_paths(new_paths, app_config.clone(), _visited, cont);
+                let _ = process_paths(new_paths, app_config.clone(), _visited, cont, max_depth + 1);
             }
         }
         _ => println!("{:?} path does not exists or is not readable", path),
